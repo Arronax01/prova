@@ -52,3 +52,17 @@ def reason(body: ReasonReq, authorization: str | None = Header(default=None)):
         text = str(data)
     tokens = (data.get("usage", {}) or {}).get("total_tokens", 0)
     return {"text": text, "tokens_used": tokens, "model_used": body.model}
+
+@app.post("/echo")
+def echo(body: dict):
+    # Nessuna auth: serve solo per provare l’Action
+    return {"ok": True, "received": body}
+
+@app.get("/diag")
+def diag():
+    return {
+        "ok": True,
+        "env_openai": bool(os.environ.get("OPENAI_API_KEY")),
+        "env_token": bool(os.environ.get("PROXY_TOKEN"))
+    }
+
