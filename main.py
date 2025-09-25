@@ -1,3 +1,19 @@
+from fastapi import FastAPI, HTTPException, Header
+from pydantic import BaseModel
+import os, requests
+
+app = FastAPI(title="Reasoning Proxy (o3 / GPT-5 Thinking)")
+
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+OPENAI_URL = "https://api.openai.com/v1/responses"
+PROXY_TOKEN = os.environ.get("PROXY_TOKEN", "secret")
+
+class ReasonReq(BaseModel):
+    prompt: str
+    model: str            # "o3", "o3-pro", "gpt-5-thinking"
+    temperature: float | None = 0.2
+    extra_context: dict | None = None
+
 @app.post("/reason")
 def reason(body: dict):
     # === auth via body (niente header Bearer) ===
@@ -52,3 +68,19 @@ def reason(body: dict):
 
     tokens = (data.get("usage", {}) or {}).get("total_tokens", 0)
     return {"ok": True, "text": text, "tokens_used": tokens, "model_used": model}
+
+@app.get("/")
+def root():
+    return {"ok": True, "routes": ["/", "/health", "/diag", "/reason (POST)"]}
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
+@app.get("/diag")
+def diag():
+    return {
+        "ok": True,
+        "env_openai": bool(os.environ.get("OPENAI_API_KEY")),
+        "env_token": bool(os.environ.get("PROXY_TOKEN"))
+    }
